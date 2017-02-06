@@ -31,7 +31,9 @@ namespace Encrypt
 
 	void Encrypt::encrypt()
 	{
-		char byte_in, i, j, byte_out = 0, position = 0;
+		char i, j, byte_out = 0, position = 0;
+		char byte_in;
+		unsigned char byte_in_u;
 		char rems[SIZE_MODS], max_mods = 0;
 
 		generation_key();
@@ -46,18 +48,28 @@ namespace Encrypt
 		genetation_tree_huffman(max_mods);
 
 		write_key();
-		std::cerr << " test5" << std::endl;
-		while (file_in.good()) {
-			//file_in.read(&byte_in, 1);
-			file_in.get(byte_in);
+		file_in.read(&byte_in, 1);
+		byte_in_u = byte_in;
+		while (file_in.good()) 
+		{
+			
+			std::cerr << "read : " << (int)byte_in_u << std::endl;
+			std::cerr << "step : ";
 			for (i = 0; i < SIZE_MODS; ++i ) {
-				rems[i] = byte_in % mods[i];
+				rems[i] = byte_in_u % mods[i];
+				std::cerr << (int)rems[i] << " ";
 			}
+			
 
+			std::cerr << std::endl;
+			//std::cerr << "mtf : ";
 			for (i = 0; i < SIZE_MODS; ++i)
 			{
 				char rem = step_MTF(rems[i]);
-				for (j = tree_huffman[rem].size() - 1; j >= 0; --j)
+				std::cerr << (int)rem << std::endl;
+				//std::cerr << (int)rem  << " ";
+				//for (j = tree_huffman[rem].size() - 1; j >= 0; --j)
+				for (j = 0; j < tree_huffman[rem].size(); ++j)
 				{
 					byte_out = byte_out << 1;
 					if (tree_huffman[rem][j]) {
@@ -66,53 +78,29 @@ namespace Encrypt
 					++position;
 					if (position == 8) {
 						file_out.write(&byte_out, 1);
+						std::cerr << "			wr "<< (int)byte_out << std::endl;
 						position = 0;
 						byte_out = 0;
 					}
 				}
 			}
+			//std::cerr << std::endl;
+			file_in.get(byte_in);
+			byte_in_u = byte_in;
 		}
 		if (position != 0) {
+			byte_out <<= 8 - position;
 			file_out.write(&byte_out, 1);
-			file_out.write(&position, 1);
+			//std::cerr << "			wr " << (int)byte_out << std::endl;
+			//std::cerr << "			wr " << (int)position << std::endl;
 		}
+		//file_out.write(&position, 1);
+		//std::cerr << " pos = " << (int)position << " byte "<< (int)(byte_out) << std::endl;
 		print_huffman();
+		std::cerr << " finish encr" << std::endl;
 	};
 	void Encrypt::decrypt()
 	{
-		/*char  max_mods = 0, i;
-		read_key();
-		for (i = 0; i < SIZE_MODS; ++i)
-		{
-			if (max_mods < mods[i])
-			{
-				max_mods = mods[i];
-			}
-		}
-
-		genetation_tree_huffman(max_mods);
-
-		char buf_in[3];
-		char pos_in = 2, pos_out = 0, buf_out;
-		char pos_in_bit = 0;
-		bool good = true;
-
-		file_in.get(buf_in[0]);
-		good = file_in.good();
-		if (good)
-		{
-			file_in.get(buf_in[1]);
-			good = file_in.good();
-		}
-		
-		// TODO ÌÍÎÃÀÀÀÀÀ
-		while (good) 
-		{
-			file_in.get(buf_in[pos_in]);
-			good = file_in.good();
-			pos_in = (pos_in + 1) % 3;
-
-		}*/
 		char  max_mods = 0, i;
 		read_key();
 		for (i = 0; i < SIZE_MODS; ++i)
@@ -124,31 +112,45 @@ namespace Encrypt
 		}
 
 		genetation_tree_huffman(max_mods);
-		std::cerr << " test ss" << std::endl;
 		DecodingTreeEntry *root = translateTableToTree(tree_huffman);
-		std::cerr << " test ss" << std::endl;
 		char rems[SIZE_MODS];
 		char buf_mtf[SIZE_MODS];
 		char buf[2];
 		char shift = 0;
-		print_huffman();
-		file_in.read(buf, 2);
-		std::cerr << " test ss" << std::endl;
+		//print_huffman();
+		
+		file_in.read(buf, sizeof (buf));
+		std::cerr << "       read : " <<  (int)buf[0] << std::endl;
+		std::cerr << "       read : " <<  (int)buf[1] << std::endl;
 		do {
-			std::cerr << " test.." << std::endl;
+			
 			for (i = 0; i < SIZE_MODS; ++i) 
 			{
-				buf_mtf[i] = back_step_MTF(nextModule(buf, shift, root));
+				char next = nextModule(buf, shift, root);
+				std::cerr << (int)next << std::endl;
+				buf_mtf[i] = back_step_MTF(next);
+				//std::cerr << (int)next << " mtf : " << (int)buf_mtf[i] << std::endl;
 			}
+			std::cerr << "step ";
+			for (i = 0; i < SIZE_MODS; ++i)
+			{
+				std::cerr << (int)buf_mtf[i] << " ";
+			}
+			std::cerr << std::endl;
 			char t = chinaTheorem(buf_mtf);
 			file_out.write(&t, 1);
+			std::cerr << "		write " << (int)(t) << std::endl;
+			
 		} while (file_in.good());
-
+		std::cerr << std::endl;
 	};
 	void Encrypt::read_key()
 	{
 		int i;
 		char buff, max_mod = 0;
+		key.clear();
+		mods.clear();
+		table_MTF.clear();
 		for (i = 0; i < SIZE_RAND_KEY; ++i)
 		{
 			file_in.get(buff);
@@ -177,14 +179,14 @@ namespace Encrypt
 	void Encrypt::write_key()
 	{
 		int i;
-		std::cerr << "key.size() " << key.size() << std::endl;
+		//std::cerr << "key.size() " << key.size() << std::endl;
 
 		for (i =0; i < key.size(); ++i)
 		{
 			file_out.write(&key[i], 1);
-			std::cerr << (int)key[i] << " " ;
+			//std::cerr << (int)key[i] << " " ;
 		}
-		std::cerr << std::endl;
+		//std::cerr << std::endl;
 	}
 
 	int Encrypt::extEvcl(int x, int m) {
@@ -285,7 +287,7 @@ namespace Encrypt
 				id = rand() % SIZE_OF_INDEX;
 				while ((mods[i] * index2[id]) < 128)
 				{
-					if (index[id] != 0 || mods[id] % index2[id] == 0)
+					if (index[id] != 0 || mods[i] % index2[id] == 0) // id - 8
 					{
 						mods[i] *= index2[id];
 						index[id] = 0;
@@ -317,7 +319,14 @@ namespace Encrypt
 			key.push_back(*p);
 			++p;
 		}
-
+		//std::cerr << " generic key" << std::endl;
+		vector<char>::iterator w = key.begin();
+		//char cou = 0;
+		//for (cou = 0; cou < key.size(); ++ cou)
+		//{
+			//td::cerr << (int)key[cou] << " ";
+		//}
+		//std::cerr << std::endl;
 		//return key;
 	}
 
@@ -420,13 +429,13 @@ namespace Encrypt
 		}
 		file_in.open(name_file_in, ios_base::in | ios_base::binary);
 		if (!file_in.is_open()) {
-			std::cerr << "Error open file " << name_file_in.data() << std::endl;// exeption
+			std::cerr << "Error open file " << std::endl;// exeption
 			return -1;
 		}
 		file_out.open(name_file_out, ios_base::out | ios_base::trunc | ios_base::binary);
 		if (!file_out.is_open()) {
 			file_in.close();
-			std::cerr << "Error open/create file " << name_file_out.data() << std::endl;// exeption
+			std::cerr << "Error open/create file " << std::endl;// exeption
 			return -1;
 		}
 		return 0;
@@ -439,7 +448,7 @@ namespace Encrypt
 	Encrypt::Encrypt() {};
 	void Encrypt::encrypt(const std::string name_file_in, const std::string name_file_out)
 	{
-		if (open_files(name_file_in, name_file_out))
+		if (open_files(name_file_in, name_file_out) == -1)
 			return;
 		encrypt();
 		close_files();
@@ -453,7 +462,7 @@ namespace Encrypt
 
 
 	void Encrypt::insertValue(Encrypt::DecodingTreeEntry *where, std::vector<bool> &code, int offset, char value) {
-		if (offset + 1 == code.size()) {
+		if (offset == code.size()) {
 			where->value = value;
 			where->left = NULL;
 			where->right = NULL;
@@ -464,6 +473,7 @@ namespace Encrypt
 				where->left = (DecodingTreeEntry *)malloc(sizeof(DecodingTreeEntry));
 				where->left->left = NULL;
 				where->left->right = NULL;
+				where->left->value = -1;
 			}
 			insertValue(where->left, code, offset + 1, value);
 		}
@@ -472,6 +482,7 @@ namespace Encrypt
 				where->right = (DecodingTreeEntry *)malloc(sizeof(DecodingTreeEntry));
 				where->right->left = NULL;
 				where->right->right = NULL;
+				where->right->value = -1;
 			}
 			insertValue(where->right, code, offset + 1, value);
 		}
@@ -481,6 +492,7 @@ namespace Encrypt
 		DecodingTreeEntry *root = (DecodingTreeEntry *)malloc(sizeof(DecodingTreeEntry));
 		root->left = NULL;
 		root->right = NULL;
+		root->value = -1;
 		for (int i = 0; i < table.size(); ++i) {
 			vector<bool> code = table[i];
 			insertValue(root, code, 0, i);
@@ -489,34 +501,29 @@ namespace Encrypt
 	}
 
 	char Encrypt::nextModule(char *buf, char& shift, Encrypt::DecodingTreeEntry *vertex) {
-		if (shift == 7) {
-			for (int i = 0; i < 2; i++) {
+		if (shift == 8) {
+			for (int i = 0; i < 1; i++) {
 				buf[i] = buf[i + 1];
 			}
-			file_in.read(&buf[2], 1);
-			//buf[2] = fgets(inFile);
+			file_in.read(&(buf[1]), 1);
+			std::cerr << "      read : " <<  (int) (buf[1]) << std::endl;
+
 			shift = 0;
 		}
-		if (!file_in.good()) {
-			shift = buf[0];
-			buf[0] = buf[1];
-		}
+		//if (file_in.eof()) {
+			//shift = 8 - buf[2];
+			//buf[0] = buf[0] << 8 - buf[1];
+		//}
 		if ((vertex->left == NULL) && (vertex->right == NULL)) {
 			return vertex->value;
 		}
 		if (buf[0] & 128) {
-			if ((vertex->right == NULL)) {
-				return vertex->value;
-			}
 			vertex = vertex->right;
 		}
 		else {
-			if ((vertex->left == NULL) ) {
-				return vertex->value;
-			}
 			vertex = vertex->left;
 		}
-		buf[0] <<= 1;
+		buf[0] = buf[0] << 1;
 		++shift;
 
 		
