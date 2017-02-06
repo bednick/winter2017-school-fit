@@ -1,20 +1,42 @@
 #pragma once
 #include <vector>
 #include <fstream>
-#include <forward_list>
 #include <iostream>
 #include <ctime>
 #include <list>
 
 namespace Encrypt
 {
+	class Table_MTF
+	{
+	public:
+		void clear();
+		void push_back(char value);
+		char raise_by_index(char value);
+		char raise_by_value(char value);
+		char get(char index);
+		Table_MTF();
+		~Table_MTF();
+	private:
+		typedef struct Node_MTF
+		{
+			struct Node_MTF* next;
+			char value;
+		} Node_MTF;
+
+		Node_MTF* head;
+		Node_MTF* tail;
+
+
+	};
+
 	class Encrypt
 	{
 	private:
 		static const char SIZE_MODS = 4;
 		static const char START_LEVEL = 5;
 		static const char SIZE_OF_INDEX = 31;
-		static const char SIZE_OF_BLOCK = 256;
+		static const int SIZE_OF_BLOCK = 256;
 		static const char SIZE_RAND_KEY = 11;
 		std::ifstream file_in;
 		std::ofstream file_out;
@@ -22,8 +44,9 @@ namespace Encrypt
 		std::vector<char> key;
 
 		std::vector<std::vector<bool>> tree_huffman;
-		std::list<char> table_MTF;
+		Table_MTF table_MTF;
 		std::vector<char> mods;
+		std::vector<std::vector<char>> value_mods;
 		
 
 		char step_MTF(char num);
@@ -34,6 +57,9 @@ namespace Encrypt
 		
 		void read_key();
 		void write_key();
+
+		char max_mod();
+		void init_value_mods();
 
 		void encrypt();
 		void decrypt();
@@ -93,7 +119,8 @@ namespace Encrypt
 		char nextModule(char *buf, char &shift, DecodingTreeEntry *vertex);
 
 		void print_huffman();
-
+		//mtf
+		
 	public:
 		Encrypt();  // генерация хафмана и табл mtf ? Или только во время начала работы? 
 		//~Encrypt();
@@ -103,5 +130,6 @@ namespace Encrypt
 
 	};
 
+	
 
 }

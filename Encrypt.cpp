@@ -4,29 +4,27 @@
 
 #include "Encrypt.h"
 
-using namespace std;
-
 namespace Encrypt
 {
 	char Encrypt::step_MTF(char num)
 	{
-		list<char>::iterator p = table_MTF.begin();
+		/*std::list<char>::iterator p = table_MTF.begin();
 		char i;
 		for (i = 0; *p != num; p++, i++)
 			;
 		char modul = *p;
 		table_MTF.remove(modul);
-		table_MTF.push_front(modul);
-		return i;
+		table_MTF.push_front(modul);*/
+		return table_MTF.raise_by_value(num);
 	};
 	char Encrypt::back_step_MTF(char num)
 	{
-		list<char>::iterator p = table_MTF.begin();
+		/*std::list<char>::iterator p = table_MTF.begin();
 		for (int i = 0; i < num; p++, i++);
 		char modul = *p;
 		table_MTF.remove(modul);
-		table_MTF.push_front(modul);
-		return modul;
+		table_MTF.push_front(modul);*/
+		return table_MTF.raise_by_index(num);
 	}
 
 	void Encrypt::encrypt()
@@ -34,41 +32,37 @@ namespace Encrypt
 		char i, j, byte_out = 0, position = 0;
 		char byte_in;
 		unsigned char byte_in_u;
-		char rems[SIZE_MODS], max_mods = 0;
+		char rems[SIZE_MODS];
 
 		generation_key();
-		for (i = 0; i < SIZE_MODS; ++i)
+		
+
+		genetation_tree_huffman(max_mod());
+		init_value_mods();
+		/*for (i = 0; i < SIZE_MODS;++i)
 		{
-			if (max_mods < mods[i]) 
+			std::cerr << "mods : " << (int)mods[i] << std::endl;
+			for (var = 1; var != 0; ++var)
 			{
-				max_mods = mods[i];
+				std::cerr << (int)value_mods[i][var] << " ";
 			}
+			std::cerr << std::endl;
+			
 		}
-
-		genetation_tree_huffman(max_mods);
-
+		std::cerr << (int)112 % mods[3] << "= 112 % mods[3] =" << (int) value_mods[3][112] << std::endl;*/
 		write_key();
 		file_in.read(&byte_in, 1);
 		byte_in_u = byte_in;
 		while (file_in.good()) 
 		{
-			
-			std::cerr << "read : " << (int)byte_in_u << std::endl;
-			std::cerr << "step : ";
 			for (i = 0; i < SIZE_MODS; ++i ) {
-				rems[i] = byte_in_u % mods[i];
-				std::cerr << (int)rems[i] << " ";
+				//rems[i] = byte_in_u % mods[i];
+				rems[i] = value_mods[i][byte_in_u];
 			}
 			
-
-			std::cerr << std::endl;
-			//std::cerr << "mtf : ";
 			for (i = 0; i < SIZE_MODS; ++i)
 			{
 				char rem = step_MTF(rems[i]);
-				std::cerr << (int)rem << std::endl;
-				//std::cerr << (int)rem  << " ";
-				//for (j = tree_huffman[rem].size() - 1; j >= 0; --j)
 				for (j = 0; j < tree_huffman[rem].size(); ++j)
 				{
 					byte_out = byte_out << 1;
@@ -78,26 +72,22 @@ namespace Encrypt
 					++position;
 					if (position == 8) {
 						file_out.write(&byte_out, 1);
-						std::cerr << "			wr "<< (int)byte_out << std::endl;
 						position = 0;
 						byte_out = 0;
 					}
 				}
 			}
-			//std::cerr << std::endl;
+
 			file_in.get(byte_in);
 			byte_in_u = byte_in;
 		}
 		if (position != 0) {
 			byte_out <<= 8 - position;
 			file_out.write(&byte_out, 1);
-			//std::cerr << "			wr " << (int)byte_out << std::endl;
-			//std::cerr << "			wr " << (int)position << std::endl;
+
 		}
-		//file_out.write(&position, 1);
-		//std::cerr << " pos = " << (int)position << " byte "<< (int)(byte_out) << std::endl;
-		print_huffman();
-		std::cerr << " finish encr" << std::endl;
+
+
 	};
 	void Encrypt::decrypt()
 	{
@@ -113,36 +103,24 @@ namespace Encrypt
 
 		genetation_tree_huffman(max_mods);
 		DecodingTreeEntry *root = translateTableToTree(tree_huffman);
-		char rems[SIZE_MODS];
+//		char rems[SIZE_MODS];
 		char buf_mtf[SIZE_MODS];
 		char buf[2];
 		char shift = 0;
-		//print_huffman();
-		
+		std::cerr << " st" << std::endl;
 		file_in.read(buf, sizeof (buf));
-		std::cerr << "       read : " <<  (int)buf[0] << std::endl;
-		std::cerr << "       read : " <<  (int)buf[1] << std::endl;
 		do {
 			
 			for (i = 0; i < SIZE_MODS; ++i) 
 			{
 				char next = nextModule(buf, shift, root);
-				std::cerr << (int)next << std::endl;
 				buf_mtf[i] = back_step_MTF(next);
-				//std::cerr << (int)next << " mtf : " << (int)buf_mtf[i] << std::endl;
 			}
-			std::cerr << "step ";
-			for (i = 0; i < SIZE_MODS; ++i)
-			{
-				std::cerr << (int)buf_mtf[i] << " ";
-			}
-			std::cerr << std::endl;
+
 			char t = chinaTheorem(buf_mtf);
 			file_out.write(&t, 1);
-			std::cerr << "		write " << (int)(t) << std::endl;
 			
 		} while (file_in.good());
-		std::cerr << std::endl;
 	};
 	void Encrypt::read_key()
 	{
@@ -150,7 +128,6 @@ namespace Encrypt
 		char buff, max_mod = 0;
 		key.clear();
 		mods.clear();
-		table_MTF.clear();
 		for (i = 0; i < SIZE_RAND_KEY; ++i)
 		{
 			file_in.get(buff);
@@ -232,7 +209,7 @@ namespace Encrypt
 
 	void  Encrypt::mtf(char max_mod) {
 		srand(time(NULL));
-		vector<int> reversibles;
+		std::vector<int> reversibles;
 		for (int i = 2; i < max_mod; ++i) {
 			if (evklid(i, max_mod) == 1)
 				reversibles.push_back(i);
@@ -314,22 +291,10 @@ namespace Encrypt
 		for (char i = 0; i < SIZE_MODS; ++i)
 			key.push_back(mods[i]);
 		mtf(max_mod);
-		list<char>::iterator p = table_MTF.begin();
 		for (char i = 0; i < max_mod; ++i) {
-			key.push_back(*p);
-			++p;
+			key.push_back(table_MTF.get(i));
 		}
-		//std::cerr << " generic key" << std::endl;
-		vector<char>::iterator w = key.begin();
-		//char cou = 0;
-		//for (cou = 0; cou < key.size(); ++ cou)
-		//{
-			//td::cerr << (int)key[cou] << " ";
-		//}
-		//std::cerr << std::endl;
-		//return key;
 	}
-
 
 	void Encrypt::build_table(Node *root, std::vector<bool> *code)
 	{
@@ -427,12 +392,12 @@ namespace Encrypt
 			std::cerr << "Error: the same names file" << std::endl;// exeption
 			return -1;
 		}
-		file_in.open(name_file_in, ios_base::in | ios_base::binary);
+		file_in.open(name_file_in, std::ios_base::in | std::ios_base::binary);
 		if (!file_in.is_open()) {
 			std::cerr << "Error open file " << std::endl;// exeption
 			return -1;
 		}
-		file_out.open(name_file_out, ios_base::out | ios_base::trunc | ios_base::binary);
+		file_out.open(name_file_out, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 		if (!file_out.is_open()) {
 			file_in.close();
 			std::cerr << "Error open/create file " << std::endl;// exeption
@@ -452,14 +417,29 @@ namespace Encrypt
 			return;
 		encrypt();
 		close_files();
+		key.clear();
+		table_MTF.clear();
+		int i;
+		for (i = 0; i < tree_huffman.size(); ++i)
+		{
+			tree_huffman[i].clear();
+		}
+		tree_huffman.clear();
 	};
 	void Encrypt::decrypt(const std::string name_file_in, const std::string name_file_out)
 	{
 		if (open_files(name_file_in, name_file_out)) return;
 		decrypt();
 		close_files();
+		key.clear();
+		table_MTF.clear();
+		int i;
+		for (i = 0; i < tree_huffman.size(); ++i)
+		{
+			tree_huffman[i].clear();
+		}
+		tree_huffman.clear();
 	};
-
 
 	void Encrypt::insertValue(Encrypt::DecodingTreeEntry *where, std::vector<bool> &code, int offset, char value) {
 		if (offset == code.size()) {
@@ -494,7 +474,7 @@ namespace Encrypt
 		root->right = NULL;
 		root->value = -1;
 		for (int i = 0; i < table.size(); ++i) {
-			vector<bool> code = table[i];
+			std::vector<bool> code = table[i];
 			insertValue(root, code, 0, i);
 		}
 		return root;
@@ -506,14 +486,9 @@ namespace Encrypt
 				buf[i] = buf[i + 1];
 			}
 			file_in.read(&(buf[1]), 1);
-			std::cerr << "      read : " <<  (int) (buf[1]) << std::endl;
 
 			shift = 0;
 		}
-		//if (file_in.eof()) {
-			//shift = 8 - buf[2];
-			//buf[0] = buf[0] << 8 - buf[1];
-		//}
 		if ((vertex->left == NULL) && (vertex->right == NULL)) {
 			return vertex->value;
 		}
@@ -545,5 +520,127 @@ namespace Encrypt
 
 			std::cout << std::endl;
 		}
+	}
+
+	char Encrypt::max_mod() 
+	{
+		char i, max_mod = 0;
+		for (i = 0; i < SIZE_MODS; ++i)
+		{
+			if (max_mod < mods[i])
+			{
+				max_mod = mods[i];
+			}
+		}
+		return max_mod;
+	}
+
+	void Encrypt::init_value_mods()
+	{
+		int i, j, k;
+		value_mods.resize(SIZE_MODS);
+		for (i = 0; i < SIZE_MODS; ++i)
+		{
+			//value_mods[i].resize(SIZE_OF_BLOCK);
+			//value_mods[i].push_back(0);
+			for (j = 0; j < mods[i]; ++j)
+			{
+				value_mods[i].push_back(j);
+			}
+			value_mods[i].push_back( 0);
+			k = 0;
+			do {
+				++j;
+				++k;
+				value_mods[i].push_back(value_mods[i][k]);
+			} while (j != 255);
+		}
+	}
+
+
+	void Table_MTF::clear() 
+	{
+		Table_MTF::Node_MTF* node;
+		while (head != NULL) 
+		{
+			node = head->next;
+			delete(head);
+			head = node;
+		}
+		head = NULL;
+		tail = NULL;
+	}
+	void  Table_MTF::push_back(char value)
+	{
+		if (tail == NULL)
+		{
+			head = new Table_MTF::Node_MTF();
+			tail = head;
+		}
+		else 
+		{
+			tail->next = new Table_MTF::Node_MTF();
+			tail = tail->next;
+		}
+		tail->next = NULL;
+		tail->value = value;
+	}
+	char  Table_MTF::raise_by_index(char index)
+	{
+		int i;
+		Table_MTF::Node_MTF* it = head;
+		Table_MTF::Node_MTF* var;
+		if (index <= 0)
+		{
+			return head->value;
+		}
+		for (i = 0; i < index - 1; ++i)
+			it = it->next;
+
+		var = it->next->next;
+		it->next->next = head;
+		head = it->next;
+		it->next = var;
+		return head->value;
+		
+	}
+	char  Table_MTF::raise_by_value(char value)
+	{
+		char count = 0;
+		Table_MTF::Node_MTF* it;
+		Table_MTF::Node_MTF* var;
+		if (head->value == value)
+			return 0;
+		it = head;
+		while (it->next->value != value)
+		{
+			it = it->next;
+			++count;
+		}
+		var = it->next->next;
+		it->next->next = head;
+		head = it->next;
+		it->next = var;
+		return count + 1;
+
+	}
+	char Table_MTF::get(char index)
+	{
+		int i;
+		Table_MTF::Node_MTF* it = head;
+		for (i = 0; i < index; ++i)
+			it = it->next;
+		return it->value;
+	}
+	Table_MTF::Table_MTF()
+	{
+		head = NULL;
+		tail = NULL;
+	}
+	Table_MTF::~Table_MTF()
+	{
+		clear();
+		head = NULL;
+		tail = NULL;
 	}
 }
