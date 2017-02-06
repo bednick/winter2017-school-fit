@@ -52,7 +52,7 @@ namespace Encrypt
 		char step_MTF(char num);
 		char back_step_MTF(char num);
 
-		int open_files(const std::string name_file_in, const std::string name_file_out);
+		int open_files(const char *name_file_in, const char *name_file_out);
 		void close_files();
 		
 		void read_key();
@@ -122,14 +122,20 @@ namespace Encrypt
 		//mtf
 		
 	public:
-		Encrypt();  // генерация хафмана и табл mtf ? Или только во время начала работы? 
+		Encrypt();  // ГЈГҐГ­ГҐГ°Г Г¶ГЁГї ГµГ ГґГ¬Г Г­Г  ГЁ ГІГ ГЎГ« mtf ? Г€Г«ГЁ ГІГ®Г«ГјГЄГ® ГўГ® ГўГ°ГҐГ¬Гї Г­Г Г·Г Г«Г  Г°Г ГЎГ®ГІГ»? 
 		//~Encrypt();
-		void encrypt(const std::string name_file_in, const std::string name_file_out);
-		void decrypt(const std::string name_file_in, const std::string name_file_out);
+		void encrypt(const char *name_file_in, const char *name_file_out);
+		void decrypt(const char *name_file_in, const char *name_file_out);
 
 
 	};
-
-	
+#ifdef _cplusplus
+ extern C {
+#endif
+	void decrypt(const char *name_file_in, const char *name_file_out);
+	void encrypt(const char *name_file_in, const char *name_file_out);
+#ifdef _cplusplus
+ }
+#endif
 
 }

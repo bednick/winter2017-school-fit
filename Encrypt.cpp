@@ -188,8 +188,8 @@ namespace Encrypt
 		char rs;
 		tmp = 0;
 		int Mi, Mi1;
-		for (char i = 0; i < SIZE_MODS; i++) M *= mods[i]; //Ïðîèçâåäåíèå ìîäóëåé
-		for (char i = 0; i < SIZE_MODS; i++) { //Ïî ôîðìóëå
+		for (char i = 0; i < SIZE_MODS; i++) M *= mods[i]; //ÃÃ°Ã®Ã¨Ã§Ã¢Ã¥Ã¤Ã¥Ã­Ã¨Ã¥ Ã¬Ã®Ã¤Ã³Ã«Ã¥Ã©
+		for (char i = 0; i < SIZE_MODS; i++) { //ÃÃ® Ã´Ã®Ã°Ã¬Ã³Ã«Ã¥
 			Mi = M / mods[i];
 			Mi1 = extEvcl(Mi, mods[i]);
 			tmp += (r[i] * Mi * Mi1) % M;
@@ -386,7 +386,7 @@ namespace Encrypt
 	}
 
 
-	int Encrypt::open_files(const std::string name_file_in, const std::string name_file_out)
+	int Encrypt::open_files(const char *name_file_in, const char *name_file_out)
 	{
 		if (name_file_in == name_file_out) {
 			std::cerr << "Error: the same names file" << std::endl;// exeption
@@ -411,7 +411,7 @@ namespace Encrypt
 		file_out.close();
 	}
 	Encrypt::Encrypt() {};
-	void Encrypt::encrypt(const std::string name_file_in, const std::string name_file_out)
+	void Encrypt::encrypt(const char *name_file_in, const char *name_file_out)
 	{
 		if (open_files(name_file_in, name_file_out) == -1)
 			return;
@@ -426,7 +426,7 @@ namespace Encrypt
 		}
 		tree_huffman.clear();
 	};
-	void Encrypt::decrypt(const std::string name_file_in, const std::string name_file_out)
+	void Encrypt::decrypt(const char *name_file_in, const char *name_file_out)
 	{
 		if (open_files(name_file_in, name_file_out)) return;
 		decrypt();
@@ -643,4 +643,18 @@ namespace Encrypt
 		head = NULL;
 		tail = NULL;
 	}
+
+	void decrypt(const char *name_file_in, const char *name_file_out)
+	{
+		Encrypt file;
+
+		file.decrypt(name_file_in, name_file_out);
+	};
+
+	void encrypt(const char *name_file_in, const char *name_file_out)
+	{
+		Encrypt file;
+
+		file.encrypt(name_file_in, name_file_out);
+	};
 }
