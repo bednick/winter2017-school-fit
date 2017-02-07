@@ -1,29 +1,14 @@
-// MathFuncsLib.cpp
-// compile with: cl /c /EHsc MathFuncsLib.cpp
-// post-build command: lib MathFuncsLib.obj
-
 #include "Encrypt.h"
 
 namespace Encrypt
 {
 	char Encrypt::step_MTF(char num)
 	{
-		/*std::list<char>::iterator p = table_MTF.begin();
-		char i;
-		for (i = 0; *p != num; p++, i++)
-			;
-		char modul = *p;
-		table_MTF.remove(modul);
-		table_MTF.push_front(modul);*/
 		return table_MTF.raise_by_value(num);
-	};
+	}
+
 	char Encrypt::back_step_MTF(char num)
 	{
-		/*std::list<char>::iterator p = table_MTF.begin();
-		for (int i = 0; i < num; p++, i++);
-		char modul = *p;
-		table_MTF.remove(modul);
-		table_MTF.push_front(modul);*/
 		return table_MTF.raise_by_index(num);
 	}
 
@@ -38,25 +23,18 @@ namespace Encrypt
 		
 
 		genetation_tree_huffman(max_mod());
+
 		init_value_mods();
-		/*for (i = 0; i < SIZE_MODS;++i)
-		{
-			std::cerr << "mods : " << (int)mods[i] << std::endl;
-			for (var = 1; var != 0; ++var)
-			{
-				std::cerr << (int)value_mods[i][var] << " ";
-			}
-			std::cerr << std::endl;
-			
-		}
-		std::cerr << (int)112 % mods[3] << "= 112 % mods[3] =" << (int) value_mods[3][112] << std::endl;*/
+
 		write_key();
+
 		file_in.read(&byte_in, 1);
+
 		byte_in_u = byte_in;
+
 		while (file_in.good()) 
 		{
 			for (i = 0; i < SIZE_MODS; ++i ) {
-				//rems[i] = byte_in_u % mods[i];
 				rems[i] = value_mods[i][byte_in_u];
 			}
 			
@@ -92,7 +70,9 @@ namespace Encrypt
 	void Encrypt::decrypt()
 	{
 		char  max_mods = 0, i;
+
 		read_key();
+
 		for (i = 0; i < SIZE_MODS; ++i)
 		{
 			if (max_mods < mods[i])
@@ -102,8 +82,8 @@ namespace Encrypt
 		}
 
 		genetation_tree_huffman(max_mods);
+
 		DecodingTreeEntry *root = translateTableToTree(tree_huffman);
-//		char rems[SIZE_MODS];
 		char buf_mtf[SIZE_MODS];
 		char buf[2];
 		char shift = 0;
@@ -127,8 +107,11 @@ namespace Encrypt
 	{
 		int i;
 		char buff, max_mod = 0;
+
 		key.clear();
+
 		mods.clear();
+
 		for (i = 0; i < SIZE_RAND_KEY; ++i)
 		{
 			file_in.get(buff);
@@ -140,6 +123,7 @@ namespace Encrypt
 			file_in.get(buff);
 			mods.push_back(buff);
 		}
+
 		for (i = 0; i < SIZE_MODS; ++i)
 		{
 			if (max_mod < mods[i])
@@ -147,6 +131,7 @@ namespace Encrypt
 				max_mod = mods[i];
 			}
 		}
+
 		for (i = 0; i < max_mod; ++i)
 		{
 			file_in.get(buff);
@@ -157,17 +142,15 @@ namespace Encrypt
 	void Encrypt::write_key()
 	{
 		int i;
-		//std::cerr << "key.size() " << key.size() << std::endl;
 
 		for (i =0; i < key.size(); ++i)
 		{
 			file_out.write(&key[i], 1);
-			//std::cerr << (int)key[i] << " " ;
 		}
-		//std::cerr << std::endl;
 	}
 
-	int Encrypt::extEvcl(int x, int m) {
+	int Encrypt::extEvcl(int x, int m) 
+	{
 		Evcl V, U, T;
 		char t;
 		x = x%m;
@@ -183,26 +166,28 @@ namespace Encrypt
 		}
 		return V.z > 0 ? V.z : m + V.z;
 	}
-	char Encrypt::chinaTheorem(char *r) {
+
+	char Encrypt::chinaTheorem(char *r) 
+	{
 		int M = 1;
 		int tmp;
 		char rs;
 		tmp = 0;
 		int Mi, Mi1;
-		for (char i = 0; i < SIZE_MODS; i++) M *= mods[i]; //Ïðîèçâåäåíèå ìîäóëåé
-	//std::cerr << "first kostil" << std::endl;
-		for (char i = 0; i < SIZE_MODS; i++) { //Ïî ôîðìóëå
-			//std::cerr << "kostil" << (int)i << std::endl;
+		for (char i = 0; i < SIZE_MODS; i++) M *= mods[i];
 
+		for (char i = 0; i < SIZE_MODS; i++) {
 			Mi = M / mods[i];
 			Mi1 = extEvcl(Mi, mods[i]);
 			tmp += (r[i] * Mi * Mi1) % M;
 		}
 		rs = tmp % M;
+
 		return rs;
 	}
 
-	int  Encrypt::evklid(int a, int b) {
+	int  Encrypt::evklid(int a, int b) 
+	{
 		while (a && b)
 			if (a >= b)
 				a %= b;
@@ -211,10 +196,13 @@ namespace Encrypt
 		return a | b;
 	}
 
-	void  Encrypt::mtf(char max_mod) {
+	void  Encrypt::mtf(char max_mod) 
+	{
 		srand(time(NULL));
 		std::vector<int> reversibles;
-		for (int i = 2; i < max_mod; ++i) {
+
+		for (int i = 2; i < max_mod; ++i) 
+		{
 			if (evklid(i, max_mod) == 1)
 				reversibles.push_back(i);
 		}
@@ -241,8 +229,10 @@ namespace Encrypt
 	{
 		char max_mod = 0;
 		char id;
+
 		srand(time(NULL));
 		id = rand() % START_LEVEL;
+
 		char index2[SIZE_OF_INDEX] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127 };
 		char index[SIZE_OF_INDEX] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127 };
 		mods.clear();
@@ -268,7 +258,7 @@ namespace Encrypt
 				id = rand() % SIZE_OF_INDEX;
 				while ((mods[i] * index2[id]) < 128)
 				{
-					if (index[id] != 0 || mods[i] % index2[id] == 0) // id - 8
+					if (index[id] != 0 || mods[i] % index2[id] == 0)
 					{
 						mods[i] *= index2[id];
 						index[id] = 0;
@@ -393,18 +383,18 @@ namespace Encrypt
 	int Encrypt::open_files(const char *name_file_in, const char *name_file_out)
 	{
 		if (name_file_in == name_file_out) {
-			std::cerr << "Error: the same names file" << std::endl;// exeption
+			std::cerr << "Error: the same names file" << std::endl;
 			return -1;
 		}
 		file_in.open(name_file_in, std::ios_base::in | std::ios_base::binary);
 		if (!file_in.is_open()) {
-			std::cerr << "Error open file " << std::endl;// exeption
+			std::cerr << "Error open file " << std::endl;
 			return -1;
 		}
 		file_out.open(name_file_out, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 		if (!file_out.is_open()) {
 			file_in.close();
-			std::cerr << "Error open/create file " << std::endl;// exeption
+			std::cerr << "Error open/create file " << std::endl;
 			return -1;
 		}
 		return 0;
@@ -545,8 +535,6 @@ namespace Encrypt
 		value_mods.resize(SIZE_MODS);
 		for (i = 0; i < SIZE_MODS; ++i)
 		{
-			//value_mods[i].resize(SIZE_OF_BLOCK);
-			//value_mods[i].push_back(0);
 			for (j = 0; j < mods[i]; ++j)
 			{
 				value_mods[i].push_back(j);
@@ -647,18 +635,18 @@ namespace Encrypt
 		head = NULL;
 		tail = NULL;
 	}
-
-	void decrypt_f(const char *name_file_in, const char *name_file_out)
-	{
-		Encrypt file;
-
-		file.decrypt(name_file_in, name_file_out);
-	};
-
-	void encrypt_f(const char *name_file_in, const char *name_file_out)
-	{
-		Encrypt file;
-
-		file.encrypt(name_file_in, name_file_out);
-	};
 }
+
+void decrypt_f(const char *name_file_in, const char *name_file_out)
+{
+	Encrypt::Encrypt file;
+
+	file.decrypt(name_file_in, name_file_out);
+};
+
+void encrypt_f(const char *name_file_in, const char *name_file_out)
+{
+	Encrypt::Encrypt file;
+
+	file.encrypt(name_file_in, name_file_out);
+};
