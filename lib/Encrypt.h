@@ -127,15 +127,15 @@ namespace Encrypt
 		void encrypt(const char *name_file_in, const char *name_file_out);
 		void decrypt(const char *name_file_in, const char *name_file_out);
 	};
-	
+}
+
 #ifdef _cplusplus
- extern C {
+extern "C" {
 #endif
 
 	void decrypt_f(const char *name_file_in, const char *name_file_out);
 	void encrypt_f(const char *name_file_in, const char *name_file_out);
 
 #ifdef _cplusplus
- }
-#endif
 }
+#endif
